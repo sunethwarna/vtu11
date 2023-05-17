@@ -41,26 +41,27 @@ StringStringMap writeDataSetHeader( Writer&& writer,
     return attributes;
 }
 
-template<typename Writer, typename DataType> inline
+template<typename Writer, typename TIteratorType> inline
 void writeDataSet( Writer& writer,
                    std::ostream& output,
                    const std::string& name,
                    size_t ncomponents,
-                   const std::vector<DataType>& data )
+                   const size_t nvalues,
+                   TIteratorType begin )
 {
-    auto attributes = writeDataSetHeader<DataType>( writer, name, ncomponents );
+    auto attributes = writeDataSetHeader<std::decay_t<decltype(*begin)>>( writer, name, ncomponents );
 
     if( attributes["format"] != "appended" )
     {
         ScopedXmlTag dataArrayTag( output, "DataArray", attributes );
 
-        writer.writeData( output, data.data(), data.size() );
+        writer.writeData( output, begin, nvalues );
     }
     else
     {
         writeEmptyTag( output, "DataArray", attributes );
 
-        writer.writeData( output, data.data(), data.size() );
+        writer.writeData( output, begin, nvalues );
     }
 }
 
@@ -76,7 +77,7 @@ void writeDataSets( const std::vector<DataSetInfo>& dataSetInfo,
         if( std::get<1>( metadata ) == type )
         {
             detail::writeDataSet( writer, output, std::get<0>( metadata ),
-                std::get<2>( metadata ), dataSetData[iDataset] );
+                std::get<2>( metadata ), dataSetData[iDataset].size(), dataSetData[iDataset].data() );
         }
     }
 }
@@ -170,16 +171,16 @@ void writeVtu( const std::string& filename,
                 {
                     ScopedXmlTag pointsTag( output, "Points", { } );
 
-                    detail::writeDataSet( writer, output, "", 3, mesh.points( ) );
+                    detail::writeDataSet( writer, output, "", 3, mesh.points( ).size(), mesh.points().data() );
 
                 } // Points
 
                 {
                     ScopedXmlTag pointsTag( output, "Cells", { } );
 
-                    detail::writeDataSet( writer, output, "connectivity", 1, mesh.connectivity( ) );
-                    detail::writeDataSet( writer, output, "offsets", 1, mesh.offsets( ) );
-                    detail::writeDataSet( writer, output, "types", 1, mesh.types( ) );
+                    detail::writeDataSet( writer, output, "connectivity", 1, mesh.connectivity( ).size(), mesh.connectivity().data() );
+                    detail::writeDataSet( writer, output, "offsets", 1, mesh.offsets( ).size(), mesh.offsets().data() );
+                    detail::writeDataSet( writer, output, "types", 1, mesh.types( ).size(), mesh.types().data() );
 
                 } // Cells
 
