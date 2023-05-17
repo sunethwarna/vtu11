@@ -25,7 +25,7 @@ std::vector<HeaderType> zlibCompressData( const std::vector<T>& data,
   using IntType = uLong;
 
   // Somewhere in vtu11/inc/filesystem.hpp, with MSVC, max is defined as macro. This pre-
-  // vents us from using std::numeric_limits<T>::max( ), so we turn off these checks. 
+  // vents us from using std::numeric_limits<T>::max( ), so we turn off these checks.
   #ifndef max
   if( data.size( ) > std::numeric_limits<IntType>::max( ) ||
       blockSize > std::numeric_limits<IntType>::max( ) )
@@ -47,7 +47,7 @@ std::vector<HeaderType> zlibCompressData( const std::vector<T>& data,
 
   Byte* buffer = new Byte[compressedBuffersize];
   Byte* currentByte = const_cast<Byte*>( reinterpret_cast<const Byte*>( &data[0] ) );
-  
+
   IntType numberOfBytes = static_cast<IntType>( data.size( ) ) * sizeof( T );
   IntType numberOfBlocks = ( numberOfBytes - 1 ) / blocksize + 1;
 
@@ -90,11 +90,17 @@ std::vector<HeaderType> zlibCompressData( const std::vector<T>& data,
 
 } // detail
 
-template<typename T>
+template<typename TIteratorType>
 inline void CompressedRawBinaryAppendedWriter::writeData( std::ostream&,
-                                                          const std::vector<T>& data )
+                                                          TIteratorType begin,
+                                                          const size_t n )
 {
   std::vector<std::vector<Byte>> compressedBlocks;
+  std::vector<decltype(*begin)> data(n);
+  for (size_t i = 0; i < n; ++i)
+  {
+    values[i] = *begin++;
+  }
 
   auto header = detail::zlibCompressData( data, compressedBlocks );
 

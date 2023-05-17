@@ -19,9 +19,10 @@ namespace vtu11
 
 struct CompressedRawBinaryAppendedWriter
 {
-  template<typename T>
+  template<typename TIteratorType>
   void writeData( std::ostream& output,
-                  const std::vector<T>& data );
+                  TIteratorType begin,
+                  const size_t n );
 
   void writeAppended( std::ostream& output );
 

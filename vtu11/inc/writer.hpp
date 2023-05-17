@@ -18,9 +18,10 @@ namespace vtu11
 
 struct AsciiWriter
 {
-  template<typename T>
+  template<typename TIteratorType>
   void writeData( std::ostream& output,
-                  const std::vector<T>& data );
+                  TIteratorType begin,
+                  const size_t n );
 
   void writeAppended( std::ostream& output );
 
@@ -32,9 +33,10 @@ struct AsciiWriter
 
 struct Base64BinaryWriter
 {
-  template<typename T>
+  template<typename TIteratorType>
   void writeData( std::ostream& output,
-                  const std::vector<T>& data );
+                  TIteratorType begin,
+                  const size_t n );
 
   void writeAppended( std::ostream& output );
 
@@ -46,9 +48,10 @@ struct Base64BinaryWriter
 
 struct Base64BinaryAppendedWriter
 {
-  template<typename T>
+  template<typename TIteratorType>
   void writeData( std::ostream& output,
-                  const std::vector<T>& data );
+                  TIteratorType begin,
+                  const size_t n );
 
   void writeAppended( std::ostream& output );
 
@@ -59,14 +62,15 @@ struct Base64BinaryAppendedWriter
 
   size_t offset = 0;
 
-  std::vector<std::pair<const char*, HeaderType>> appendedData;
+  std::vector<std::pair<const char*, HeaderType>> appendedData{};
 };
 
 struct RawBinaryAppendedWriter
 {
-  template<typename T>
+  template<typename TIteratorType>
   void writeData( std::ostream& output,
-                  const std::vector<T>& data );
+                  TIteratorType begin,
+                  const size_t n );
 
   void writeAppended( std::ostream& output );
 

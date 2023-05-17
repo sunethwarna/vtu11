@@ -13,6 +13,7 @@
 #include "vtu11/inc/utilities.hpp"
 
 #include <fstream>
+#include <type_traits>
 
 namespace vtu11
 {
@@ -46,34 +47,29 @@ VTU11_WRITE_NUMBER_SPECIALIZATION( "%hhd", unsigned char )
 
 } // namespace detail
 
-template<typename T>
+template<typename TIteratorType>
 inline void AsciiWriter::writeData( std::ostream& output,
-                                    const std::vector<T>& data )
+                                    TIteratorType begin,
+                                    const size_t n )
 {
     char buffer[64];
 
-    for( auto value : data )
+    for(size_t i = 0; i < n; ++i)
     {
-        detail::writeNumber( buffer, value );
+        if constexpr(std::is_same_v<std::remove_pointer_t<TIteratorType>, const signed char>)
+        {
+            output << static_cast<int>( *(begin++) ) << " ";
 
-        output << buffer << " ";
+        }
+        else
+        {
+          detail::writeNumber( buffer, *(begin++) );
+
+          output << buffer << " ";
+        }
     }
 
     output << "\n";
-}
-
-template<>
-inline void AsciiWriter::writeData( std::ostream& output,
-                                    const std::vector<std::int8_t>& data )
-{
-  for( auto value : data )
-  {
-    // will otherwise interpret uint8 as char and output nonsense instead
-  	// changed the datatype from unsigned to int
-      output << static_cast<int>( value ) << " ";
-  }
-
-  output << "\n";
 }
 
 inline void AsciiWriter::writeAppended( std::ostream& )
@@ -97,15 +93,16 @@ inline StringStringMap AsciiWriter::appendedAttributes( )
 
 // ----------------------------------------------------------------
 
-template<typename T>
+template<typename TIteratorType>
 inline void Base64BinaryWriter::writeData( std::ostream& output,
-                                           const std::vector<T>& data )
+                                           TIteratorType begin,
+                                           const size_t n )
 {
-  HeaderType numberOfBytes = data.size( ) * sizeof( T );
+  HeaderType numberOfBytes = n * sizeof( decltype( *begin ) );
 
   Base64EncodedOutput base64output;
   base64output.writeOutputData( output, &numberOfBytes, 1 );
-  base64output.writeOutputData( output, data.begin( ), data.size( ) );
+  base64output.writeOutputData( output, begin, n );
   base64output.closeOutputData( output );
 
   output << "\n";
@@ -133,13 +130,14 @@ inline StringStringMap Base64BinaryWriter::appendedAttributes( )
 
 // ----------------------------------------------------------------
 
-template<typename T>
-inline void Base64BinaryAppendedWriter::writeData( std::ostream&,
-                                                   const std::vector<T>& data )
+template<typename TIteratorType>
+inline void Base64BinaryAppendedWriter::writeData( std::ostream& output,
+                                                   TIteratorType begin,
+                                                   const size_t n )
 {
-  HeaderType rawBytes = data.size( ) * sizeof( T );
+  HeaderType rawBytes = n * sizeof( decltype(*begin) );
 
-  appendedData.emplace_back( reinterpret_cast<const char*>( &data[0] ), rawBytes );
+  this->appendedData.emplace_back( reinterpret_cast<const char*>( begin ), rawBytes );
 
   offset += encodedNumberOfBytes( rawBytes + sizeof( HeaderType ) );
 }
@@ -175,13 +173,14 @@ inline StringStringMap Base64BinaryAppendedWriter::appendedAttributes( )
 
 // ----------------------------------------------------------------
 
-template<typename T>
-inline void RawBinaryAppendedWriter::writeData( std::ostream&,
-                                                const std::vector<T>& data )
+template<typename TIteratorType>
+inline void RawBinaryAppendedWriter::writeData( std::ostream& output,
+                                                TIteratorType begin,
+                                                const size_t n )
 {
-  HeaderType rawBytes = data.size( ) * sizeof( T );
+  HeaderType rawBytes = n * sizeof( decltype(*begin) );
 
-  appendedData.emplace_back( reinterpret_cast<const char*>( &data[0] ), rawBytes );
+  appendedData.emplace_back( reinterpret_cast<const char*>( begin ), rawBytes );
 
   offset += sizeof( HeaderType ) + rawBytes;
 }

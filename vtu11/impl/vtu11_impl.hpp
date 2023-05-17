@@ -54,13 +54,13 @@ void writeDataSet( Writer& writer,
     {
         ScopedXmlTag dataArrayTag( output, "DataArray", attributes );
 
-        writer.writeData( output, data );
+        writer.writeData( output, data.data(), data.size() );
     }
     else
     {
         writeEmptyTag( output, "DataArray", attributes );
 
-        writer.writeData( output, data );
+        writer.writeData( output, data.data(), data.size() );
     }
 }
 
@@ -75,7 +75,7 @@ void writeDataSets( const std::vector<DataSetInfo>& dataSetInfo,
 
         if( std::get<1>( metadata ) == type )
         {
-            detail::writeDataSet( writer, output, std::get<0>( metadata ), 
+            detail::writeDataSet( writer, output, std::get<0>( metadata ),
                 std::get<2>( metadata ), dataSetData[iDataset] );
         }
     }
@@ -91,7 +91,7 @@ void writeDataSetPVtuHeaders( const std::vector<DataSetInfo>& dataSetInfo,
 
         if( std::get<1>( metadata ) == type )
         {
-            auto attributes = detail::writeDataSetHeader<double>( writer, 
+            auto attributes = detail::writeDataSetHeader<double>( writer,
                std::get<0>( metadata ), std::get<2>( metadata ) );
 
             writeEmptyTag( output, "PDataArray", attributes );
@@ -102,7 +102,7 @@ void writeDataSetPVtuHeaders( const std::vector<DataSetInfo>& dataSetInfo,
 template<typename Writer, typename Content> inline
 void writeVTUFile( const std::string& filename,
                    const char* type,
-                   Writer&& writer, 
+                   Writer&& writer,
                    Content&& writeContent )
 {
     std::ofstream output( filename, std::ios::binary );
@@ -124,7 +124,7 @@ void writeVTUFile( const std::string& filename,
 
     {
         ScopedXmlTag vtkFileTag( output, "VTKFile", headerAttributes );
-        
+
         writeContent( output );
 
     } // VTKFile
@@ -144,17 +144,17 @@ void writeVtu( const std::string& filename,
         {
             ScopedXmlTag unstructuredGridFileTag( output, "UnstructuredGrid", { } );
             {
-                ScopedXmlTag pieceTag( output, "Piece", 
-                { 
+                ScopedXmlTag pieceTag( output, "Piece",
+                {
                     { "NumberOfPoints", std::to_string( mesh.numberOfPoints( ) ) },
-                    { "NumberOfCells" , std::to_string( mesh.numberOfCells( )  ) } 
+                    { "NumberOfCells" , std::to_string( mesh.numberOfCells( )  ) }
 
                 } );
 
                 {
                     ScopedXmlTag pointDataTag( output, "PointData", { } );
 
-                    detail::writeDataSets( dataSetInfo, dataSetData, 
+                    detail::writeDataSets( dataSetInfo, dataSetData,
                         output, writer, DataSetType::PointData );
 
                 } // PointData
@@ -162,7 +162,7 @@ void writeVtu( const std::string& filename,
                 {
                     ScopedXmlTag cellDataTag( output, "CellData", { } );
 
-                    detail::writeDataSets( dataSetInfo, dataSetData, 
+                    detail::writeDataSets( dataSetInfo, dataSetData,
                         output, writer, DataSetType::CellData );
 
                 } // CellData
@@ -196,10 +196,10 @@ void writeVtu( const std::string& filename,
 
             writer.writeAppended( output );
 
-        } // AppendedData     
+        } // AppendedData
 
     } ); // writeVTUFile
-    
+
 } // writeVtu
 
 } // namespace detail
@@ -278,8 +278,8 @@ inline void writePVtu( const std::string& path,
                           [&]( std::ostream& output )
     {
         std::string ghostLevel = "0"; // Hardcoded to be 0
-            
-        ScopedXmlTag pUnstructuredGridFileTag( output, 
+
+        ScopedXmlTag pUnstructuredGridFileTag( output,
             "PUnstructuredGrid", { { "GhostLevel", ghostLevel } } );
 
         {
@@ -329,8 +329,8 @@ void writePartition( const std::string& path,
 {
     auto vtuname = baseName + "_" + std::to_string( fileId ) + ".vtu";
 
-    auto fullname = vtu11fs::path { path } / 
-                    vtu11fs::path { baseName } / 
+    auto fullname = vtu11fs::path { path } /
+                    vtu11fs::path { baseName } /
                     vtu11fs::path { vtuname };
 
     writeVtu( fullname.string( ), mesh, dataSetInfo, dataSetData, writeMode );
